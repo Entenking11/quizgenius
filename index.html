@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0f14">
+<title>QuizGenius</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161922;
+    --surface2: #1e2230;
+    --border: #2a2f3e;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --danger: #ff4757;
+    --gold: #ffd700;
+    --r: 12px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; }
+  .logo span { color: var(--accent); }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    padding-bottom: var(--safe-bottom);
+  }
+  .bnav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px 8px; border: none; background: none;
+    color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: .68rem;
+    cursor: pointer; transition: color .2s; gap: 3px;
+  }
+  .bnav-btn .bicon { font-size: 1.3rem; line-height: 1; }
+  .bnav-btn.active { color: var(--accent); }
+  .bnav-btn.active .bicon { filter: drop-shadow(0 0 6px var(--accent)); }
+
+  /* SCROLL AREA */
+  #scroll-area {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  .screen { display: none; padding: 16px; padding-bottom: 24px; }
+  .screen.active { display: block; }
+
+  /* SECTION TITLE */
+  .screen-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; }
+
+  /* CARDS & SURFACES */
+  .card {
+    background: var(--surface); border-radius: var(--r);
+    border: 1px solid var(--border); padding: 16px; margin-bottom: 12px;
+  }
+  .card-title { font-family: 'Syne', sans-serif; font-size: .9rem; color: var(--accent); margin-bottom: 14px; }
+
+  /* UPLOAD BUTTONS */
+  .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .upload-card {
+    background: var(--surface2); border: 2px dashed var(--border); border-radius: 10px;
+    padding: 20px 12px; text-align: center; cursor: pointer; transition: all .2s;
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .upload-card:active { border-color: var(--accent); background: rgba(108,99,255,.1); }
+  .upload-card .icon { font-size: 1.8rem; }
+  .upload-card h4 { font-family: 'Syne', sans-serif; font-size: .82rem; }
+  .upload-card p { color: var(--text2); font-size: .73rem; }
+  .upload-card input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+  /* TEXTAREA */
+  textarea {
+    width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: .9rem; resize: none;
+    min-height: 90px;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 18px; border-radius: 10px; border: none; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: .85rem;
+    transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+    justify-content: center;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-outline { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text2); }
+  .btn-green { background: var(--accent3); color: #000; }
+  .btn-full { width: 100%; }
+  .btn:disabled { opacity: .35; pointer-events: none; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* SOURCES LIST */
+  .source-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px; background: var(--surface2); border-radius: 8px;
+    margin-bottom: 8px; border: 1px solid var(--border);
+  }
+  .source-item .sname { font-size: .88rem; }
+  .source-item .stype { font-size: .73rem; color: var(--text2); margin-top: 2px; }
+  .source-item .sdel { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+
+  /* TYPE TOGGLES */
+  .type-grid { display: flex; flex-direction: column; gap: 8px; }
+  .type-toggle {
+    padding: 12px 14px; border-radius: 10px; border: 2px solid var(--border);
+    background: var(--surface2); color: var(--text2); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: all .2s;
+    display: flex; align-items: center; gap: 10px; font-size: .9rem;
+    text-align: left;
+  }
+  .type-toggle.selected { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,.1); }
+  .type-toggle .tchk { width: 20px; height: 20px; border-radius: 5px; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .75rem; }
+
+  /* COUNT SLIDER */
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--accent); height: 6px; }
+  .slider-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: var(--accent); min-width: 32px; text-align: center; }
+
+  /* MODE CARDS */
+  .mode-grid { display: flex; flex-direction: column; gap: 10px; }
+  .mode-card {
+    border: 2px solid var(--border); border-radius: var(--r); padding: 14px 16px;
+    cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 14px;
+  }
+  .mode-card:active { transform: scale(.98); }
+  .mode-card.selected { border-color: var(--accent); background: rgba(108,99,255,.08); }
+  .mode-card .micon { font-size: 1.7rem; flex-shrink: 0; }
+  .mode-card h4 { font-family: 'Syne', sans-serif; font-size: .9rem; }
+  .mode-card p { color: var(--text2); font-size: .78rem; margin-top: 3px; }
+
+  /* QUIZ HEADER */
+  .quiz-topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .qprogress { flex: 1; }
+  .qprogress-text { font-size: .78rem; color: var(--text2); margin-bottom: 5px; font-family: 'Syne', sans-serif; }
+  .pbar { height: 5px; background: var(--border); border-radius: 3px; }
+  .pbar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+  .lives-row { display: flex; gap: 2px; }
+  .life { font-size: 1.2rem; transition: all .2s; }
+  .life.lost { filter: grayscale(1); opacity: .25; }
+  .score-pill {
+    background: rgba(108,99,255,.15); border: 1px solid var(--accent);
+    padding: 5px 10px; border-radius: 20px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: .82rem; color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* QUESTION AREA */
+  #quiz-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px; }
+  .question-card { background: var(--surface); border-radius: var(--r); padding: 18px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .q-meta { margin-bottom: 10px; }
+  .q-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: .72rem; font-family: 'Syne', sans-serif; font-weight: 600;
+  }
+  .q-badge.mc { background: rgba(108,99,255,.2); color: var(--accent); }
+  .q-badge.tf { background: rgba(255,101,132,.2); color: var(--accent2); }
+  .q-badge.wr { background: rgba(67,233,123,.2); color: var(--accent3); }
+  .q-text { font-size: 1rem; font-weight: 500; line-height: 1.55; margin-bottom: 14px; }
+  .q-hint { font-size: .78rem; color: var(--text2); margin-bottom: 12px; font-style: italic; }
+
+  /* OPTIONS */
+  .options-list { display: flex; flex-direction: column; gap: 9px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+    background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+    cursor: pointer; transition: all .15s; text-align: left; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: .9rem; width: 100%;
+  }
+  .option-btn:active:not(.disabled) { transform: scale(.98); }
+  .option-btn.selected { border-color: var(--accent); background: rgba(108,99,255,.12); }
+  .option-btn.correct { border-color: var(--accent3) !important; background: rgba(67,233,123,.1) !important; }
+  .option-btn.wrong { border-color: var(--danger) !important; background: rgba(255,71,87,.1) !important; }
+  .option-btn.disabled { cursor: default; }
+  .opt-dot {
+    width: 28px; height: 28px; border-radius: 7px; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-size: .8rem; font-family: 'Syne', sans-serif; font-weight: 700; transition: all .2s;
+  }
+  .option-btn.selected .opt-dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .option-btn.correct .opt-dot { background: var(--accent3); border-color: var(--accent3); color: #000; }
+  .option-btn.wrong .opt-dot { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+  /* TF */
+  .tf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tf-btn {
+    padding: 18px 10px; border-radius: 10px; border: 2px solid var(--border);
+    background: var(--surface2); cursor: pointer; font-family: 'Syne', sans-serif;
+    font-size: .95rem; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .2s;
+  }
+  .tf-btn:active:not(.disabled) { transform: scale(.97); }
+  .tf-btn.selected { border-color: var(--accent); background: rgba(108,99,255,.12); }
+  .tf-btn.correct { border-color: var(--accent3) !important; background: rgba(67,233,123,.1) !important; }
+  .tf-btn.wrong { border-color: var(--danger) !important; background: rgba(255,71,87,.1) !important; }
+  .tf-btn.disabled { cursor: default; }
+
+  /* FEEDBACK */
+  .feedback-box { border-radius: 10px; padding: 14px; margin-top: 14px; font-size: .88rem; line-height: 1.5; display: none; }
+  .feedback-box.show { display: block; }
+  .feedback-box.correct { background: rgba(67,233,123,.08); border: 1px solid var(--accent3); color: #a0f5c0; }
+  .feedback-box.wrong { background: rgba(255,71,87,.08); border: 1px solid var(--danger); color: #ffaaaa; }
+  .feedback-box.partial { background: rgba(255,215,0,.08); border: 1px solid var(--gold); color: var(--gold); }
+
+  /* QUIZ BOTTOM BAR */
+  .quiz-bottom {
+    display: flex; gap: 10px; padding: 12px 16px;
+    background: var(--surface); border-top: 1px solid var(--border);
+    flex-shrink: 0; padding-bottom: calc(12px + var(--safe-bottom));
+  }
+  .quiz-bottom .btn { flex: 1; }
+
+  /* RESULTS */
+  .results-hero {
+    background: var(--surface); border-radius: var(--r);
+    border: 1px solid var(--border); padding: 28px 16px;
+    text-align: center; margin-bottom: 12px;
+  }
+  .res-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+  .res-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+  .res-pct { font-size: 2.8rem; font-weight: 800; font-family: 'Syne', sans-serif; }
+  .res-sub { color: var(--text2); font-size: .85rem; margin-top: 6px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card {
+    background: var(--surface); border-radius: 10px; padding: 14px 8px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-card .sv { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+  .stat-card .sl { color: var(--text2); font-size: .72rem; margin-top: 2px; }
+  .stat-card.g .sv { color: var(--accent3); }
+  .stat-card.r .sv { color: var(--danger); }
+  .stat-card.b .sv { color: var(--accent); }
+
+  .wrong-section { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .wrong-section h3 { font-family: 'Syne', sans-serif; font-size: .95rem; margin-bottom: 12px; }
+  .wrong-item { padding: 12px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--danger); }
+  .wrong-item .wq { font-size: .85rem; margin-bottom: 5px; }
+  .wrong-item .wa { font-size: .82rem; }
+  .wrong-item .wa strong { color: var(--accent3); }
+  .wrong-item .we { color: var(--text2); font-size: .78rem; margin-top: 4px; }
+
+  /* SAVED */
+  .quiz-list-item {
+    background: var(--surface); border-radius: var(--r); padding: 14px 16px;
+    border: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .qli-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .qli-title { font-family: 'Syne', sans-serif; font-size: .92rem; }
+  .qli-meta { color: var(--text2); font-size: .76rem; margin-top: 3px; }
+  .qli-actions { display: flex; gap: 8px; }
+  .qli-actions .btn { padding: 8px 14px; font-size: .8rem; }
+
+  /* HIGHSCORE */
+  .hs-table { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; }
+  .hs-row { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+  .hs-row:last-child { border-bottom: none; }
+  .hs-row.hdr { background: var(--surface2); font-family: 'Syne', sans-serif; font-size: .75rem; color: var(--text2); }
+  .hs-rank { width: 36px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: .9rem; }
+  .hs-rank.g { color: var(--gold); } .hs-rank.s { color: #c0c0c0; } .hs-rank.b { color: #cd7f32; }
+  .hs-name { flex: 1; font-size: .85rem; }
+  .hs-sub { color: var(--text2); font-size: .73rem; }
+  .hs-score { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); font-size: .9rem; }
+  .hs-date { color: var(--text2); font-size: .73rem; min-width: 70px; text-align: right; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(13,15,20,.96);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-family: 'Syne', sans-serif; font-size: 1rem; color: var(--text2); text-align: center; padding: 0 20px; }
+
+  /* FLASH */
+  .life-flash { position: fixed; inset: 0; background: rgba(255,71,87,.25); pointer-events: none; z-index: 998; opacity: 0; transition: opacity .1s; }
+  .life-flash.show { opacity: 1; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-size: .85rem; z-index: 500; opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 50px 20px; color: var(--text2); }
+  .empty .ei { font-size: 2.8rem; margin-bottom: 12px; }
+  .empty h3 { font-family: 'Syne', sans-serif; color: var(--text); margin-bottom: 6px; font-size: 1rem; }
+  .empty p { font-size: .85rem; }
+
+  /* Quiz screen layout override */
+  #quiz-layout { display: none; flex-direction: column; height: 100dvh; }
+  #quiz-layout.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- MAIN APP (non-quiz screens) -->
+<div id="main-layout" style="display:flex;flex-direction:column;height:100dvh;">
+  <div class="topbar">
+    <div class="logo">Quiz<span>Genius</span></div>
+  </div>
+
+  <div id="scroll-area">
+    <!-- SOURCES -->
+    <div id="screen-sources" class="screen active">
+      <div class="screen-title">📁 Quellen</div>
+
+      <!-- TEXT (always works) -->
+      <div class="card">
+        <div class="card-title">📝 Text eingeben</div>
+        <textarea id="text-input" placeholder="Lernstoff hier eintippen oder einfügen&#10;&#10;➜ Tipp: Im Browser langen Fingerdruck → „Einfügen" nutzen, oder den Button unten." rows="5"></textarea>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="pasteFromClipboard()">📋 Einfügen</button>
+          <button class="btn btn-green" style="flex:1" onclick="addTextSource()">✓ Speichern</button>
+        </div>
+      </div>
+
+      <!-- FOTO / BILD -->
+      <div class="card">
+        <div class="card-title">🖼️ Foto / Bild hinzufügen</div>
+        <p style="color:var(--text2);font-size:.82rem;margin-bottom:12px">Foto deiner Notizen, Heft-Seite oder eines Arbeitsblatts machen oder aus Galerie wählen.</p>
+        <div class="upload-row">
+          <label class="upload-card" for="input-camera">
+            <div class="icon">📷</div>
+            <h4>Kamera</h4>
+            <p>Jetzt fotografieren</p>
+          </label>
+          <label class="upload-card" for="input-gallery">
+            <div class="icon">🖼️</div>
+            <h4>Galerie</h4>
+            <p>Bild auswählen</p>
+          </label>
+        </div>
+        <!-- Hidden file inputs – separate inputs work more reliably on Android Chrome -->
+        <input id="input-camera" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event,'image')">
+        <input id="input-gallery" type="file" accept="image/*" style="display:none" onchange="handleFile(event,'image')">
+      </div>
+
+      <!-- PDF -->
+      <div class="card">
+        <div class="card-title">📄 PDF hinzufügen</div>
+        <p style="color:var(--text2);font-size:.82rem;margin-bottom:12px">Öffne zuerst dein PDF in einer App (z.B. Google Drive, Downloads) und teile es hierher, oder wähle es direkt aus.</p>
+        <label class="upload-card" for="input-pdf" style="display:flex;flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px">
+          <div class="icon" style="font-size:2rem;flex-shrink:0">📄</div>
+          <div>
+            <h4>PDF auswählen</h4>
+            <p>Aus Downloads oder Drive</p>
+          </div>
+        </label>
+        <input id="input-pdf" type="file" accept="application/pdf,.pdf" style="display:none" onchange="handleFile(event,'pdf')">
+        <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.78rem;color:var(--text2)">
+          💡 <strong style="color:var(--text)">Tipp:</strong> Klappt es nicht? Text aus dem PDF kopieren und oben als Text einfügen – das funktioniert immer!
+        </div>
+      </div>
+
+      <div id="sources-container">
+        <div class="empty" id="sources-empty">
+          <div class="ei">📂</div>
+          <h3>Noch keine Quellen</h3>
+          <p>Füge Text, ein Foto oder PDF hinzu</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" style="margin-top:8px" id="goto-setup-btn" disabled onclick="switchTab('setup')">
+        Weiter zur Quiz-Erstellung →
+      </button>
+    </div>
+
+    <!-- SETUP -->
+    <div id="screen-setup" class="screen">
+      <div class="screen-title">⚙️ Quiz erstellen</div>
+
+      <div class="card">
+        <div class="card-title">🎯 Fragetypen</div>
+        <div class="type-grid">
+          <button class="type-toggle selected" data-type="mc" onclick="toggleType(this)">
+            <div class="tchk">✓</div>
+            ☑️ Ankreuzen (Multiple Choice)
+          </button>
+          <button class="type-toggle selected" data-type="tf" onclick="toggleType(this)">
+            <div class="tchk">✓</div>
+            ✅ Richtig / Falsch
+          </button>
+          <button class="type-toggle selected" data-type="write" onclick="toggleType(this)">
+            <div class="tchk">✓</div>
+            ✏️ Selber schreiben
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔢 Anzahl Fragen</div>
+        <div class="slider-row">
+          <input type="range" min="3" max="20" value="10" id="q-count"
+                 oninput="document.getElementById('q-count-val').textContent=this.value">
+          <div class="slider-val" id="q-count-val">10</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎮 Modus</div>
+        <div class="mode-grid">
+          <div class="mode-card selected" data-mode="normal" onclick="selectMode(this)">
+            <div class="micon">📝</div>
+            <div>
+              <h4>Normal</h4>
+              <p>Festes Quiz, Auswertung am Ende</p>
+            </div>
+          </div>
+          <div class="mode-card" data-mode="practice" onclick="selectMode(this)">
+            <div class="micon">🔁</div>
+            <div>
+              <h4>Üben</h4>
+              <p>Falsche Antworten wiederholen</p>
+            </div>
+          </div>
+          <div class="mode-card" data-mode="survival" onclick="selectMode(this)">
+            <div class="micon">💀</div>
+            <div>
+              <h4>Survival ❤️❤️❤️</h4>
+              <p>3 Leben – Highscore erreichen!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="generateQuiz()" id="gen-btn" style="margin-top:4px">
+        🤖 Quiz generieren
+      </button>
+    </div>
+
+    <!-- SAVED -->
+    <div id="screen-saved" class="screen">
+      <div class="screen-title">💾 Gespeichert</div>
+      <div id="saved-list"></div>
+    </div>
+
+    <!-- HIGHSCORE -->
+    <div id="screen-highscore" class="screen">
+      <div class="screen-title">🏆 Highscore</div>
+      <p style="color:var(--text2);font-size:.83rem;margin-bottom:14px">Survival-Modus Bestenliste</p>
+      <div id="hs-content"></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="screen-results" class="screen">
+      <div id="results-hero-el"></div>
+      <div class="stats-row" id="results-stats-el"></div>
+      <div id="results-wrong-el"></div>
+      <div class="btn-row" style="flex-direction:column;gap:10px" id="results-actions-el"></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" onclick="switchTab('sources')" id="bnav-sources">
+      <div class="bicon">📁</div>Quellen
+    </button>
+    <button class="bnav-btn" onclick="switchTab('setup')" id="bnav-setup">
+      <div class="bicon">⚙️</div>Erstellen
+    </button>
+    <button class="bnav-btn" onclick="switchTab('saved')" id="bnav-saved">
+      <div class="bicon">💾</div>Gespeichert
+    </button>
+    <button class="bnav-btn" onclick="switchTab('highscore')" id="bnav-highscore">
+      <div class="bicon">🏆</div>Highscore
+    </button>
+  </nav>
+</div>
+
+<!-- QUIZ LAYOUT (fullscreen) -->
+<div id="quiz-layout">
+  <div class="quiz-topbar">
+    <div class="qprogress">
+      <div class="qprogress-text" id="qprogress-text">Frage 1 / 10</div>
+      <div class="pbar"><div class="pbar-fill" id="pbar-fill" style="width:10%"></div></div>
+    </div>
+    <div class="lives-row" id="lives-row" style="display:none"></div>
+    <div class="score-pill" id="score-pill">0 Pkt.</div>
+  </div>
+
+  <div id="quiz-scroll">
+    <div id="question-container" style="padding-bottom:8px"></div>
+  </div>
+
+  <div class="quiz-bottom">
+    <button class="btn btn-outline" onclick="confirmQuit()" style="flex:0 0 auto;padding:12px 14px">✕</button>
+    <button class="btn btn-primary" onclick="nextQuestion()" id="next-btn" disabled style="flex:1">Weiter →</button>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loading-msg">Quiz wird generiert...</div>
+</div>
+<div class="life-flash" id="life-flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+const S = {
+  sources: [],
+  types: ['mc','tf','write'],
+  mode: 'normal',
+  quiz: null,
+  questions: [],
+  idx: 0,
+  score: 0,
+  lives: 3,
+  wrong: [],
+  answered: false,
+  survival: false,
+};
+
+let mcSelected = new Set();
+
+// ===== STORAGE =====
+const store = {
+  saved: () => { try { return JSON.parse(localStorage.getItem('qg_saved')||'[]'); } catch { return []; } },
+  setSaved: d => localStorage.setItem('qg_saved', JSON.stringify(d)),
+  hs: () => { try { return JSON.parse(localStorage.getItem('qg_hs')||'[]'); } catch { return []; } },
+  setHs: d => localStorage.setItem('qg_hs', JSON.stringify(d)),
+};
+
+// ===== HELPERS =====
+function toast(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+function loading(msg='Lädt...') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function unloading() { document.getElementById('loading-overlay').classList.remove('show'); }
+function shuffle(a) { return [...a].sort(() => Math.random()-.5); }
+
+// ===== TABS =====
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('bnav-'+name)?.classList.add('active');
+  document.getElementById('scroll-area').scrollTop = 0;
+  if (name==='saved') renderSaved();
+  if (name==='highscore') renderHS();
+}
+
+function showQuizLayout() {
+  document.getElementById('main-layout').style.display = 'none';
+  document.getElementById('quiz-layout').classList.add('active');
+}
+function showMainLayout() {
+  document.getElementById('quiz-layout').classList.remove('active');
+  document.getElementById('main-layout').style.display = 'flex';
+}
+
+// ===== SOURCES =====
+function handleFile(e, type) {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.size > 15 * 1024 * 1024) {
+    toast('⚠️ Datei zu groß (max. 15 MB). Text bitte direkt einfügen.', 4000);
+    e.target.value = ''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const src = { id: Date.now(), name: file.name, type, rawContent: ev.target.result };
+    if (type==='pdf') src.base64 = ev.target.result.split(',')[1];
+    S.sources.push(src);
+    renderSources();
+    toast(`✓ "${file.name}" hinzugefügt`);
+  };
+  reader.onerror = () => toast('❌ Konnte Datei nicht lesen. Bitte Text direkt einfügen.', 4000);
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const ta = document.getElementById('text-input');
+    ta.value += (ta.value ? '\n\n' : '') + text;
+    toast('📋 Eingefügt!');
+  } catch {
+    toast('⚠️ Bitte Strg+V oder lang drücken → Einfügen');
+  }
+}
+
+function addTextSource() {
+  const text = document.getElementById('text-input').value.trim();
+  if (!text) return toast('⚠️ Kein Text eingegeben');
+  S.sources.push({ id: Date.now(), name: 'Text '+(S.sources.filter(s=>s.type==='text').length+1), type:'text', text });
+  document.getElementById('text-input').value = '';
+  renderSources();
+  toast('✓ Text hinzugefügt');
+}
+
+function removeSource(id) {
+  S.sources = S.sources.filter(s => s.id !== id);
+  renderSources();
+}
+
+function renderSources() {
+  const container = document.getElementById('sources-container');
+  const empty = document.getElementById('sources-empty');
+  const btn = document.getElementById('goto-setup-btn');
+  btn.disabled = S.sources.length === 0;
+  empty.style.display = S.sources.length ? 'none' : 'block';
+  // Remove old items
+  [...container.children].forEach(c => { if(c.id !== 'sources-empty') c.remove(); });
+  const icons = { pdf:'📄', image:'🖼️', text:'📝' };
+  S.sources.forEach(src => {
+    const el = document.createElement('div');
+    el.className = 'source-item';
+    const preview = src.type==='text' ? src.text.slice(0,50)+'…' : src.type.toUpperCase();
+    el.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div class="sname">${icons[src.type]||'📎'} ${src.name}</div>
+        <div class="stype">${preview}</div>
+      </div>
+      <button class="sdel" onclick="removeSource(${src.id})">🗑️</button>
+    `;
+    container.appendChild(el);
+  });
+}
+
+// ===== SETUP =====
+function toggleType(btn) {
+  const type = btn.dataset.type;
+  const sel = document.querySelectorAll('.type-toggle.selected');
+  if (btn.classList.contains('selected')) {
+    if (sel.length <= 1) return toast('⚠️ Mindestens ein Typ muss aktiv sein');
+    btn.classList.remove('selected');
+    btn.querySelector('.tchk').textContent = '';
+    S.types = S.types.filter(t => t !== type);
+  } else {
+    btn.classList.add('selected');
+    btn.querySelector('.tchk').textContent = '✓';
+    if (!S.types.includes(type)) S.types.push(type);
+  }
+}
+
+function selectMode(card) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  S.mode = card.dataset.mode;
+}
+
+// ===== GENERATE =====
+async function generateQuiz() {
+  if (!S.sources.length) return toast('⚠️ Füge zuerst Quellen hinzu');
+  loading('🤖 KI analysiert deine Quellen...');
+
+  const count = parseInt(document.getElementById('q-count').value);
+  const extra = S.mode === 'survival' ? count + 10 : count;
+  const types = S.types;
+
+  const contentParts = [];
+  const textContent = S.sources.filter(s=>s.type==='text').map(s=>s.text).join('\n\n---\n\n');
+  if (textContent) contentParts.push({ type:'text', text:'Lernmaterial:\n'+textContent });
+
+  for (const src of S.sources.filter(s=>s.type==='image')) {
+    const b64 = src.rawContent.split(',')[1];
+    const mt = src.rawContent.match(/data:(image\/\w+)/)?.[1] || 'image/jpeg';
+    contentParts.push({ type:'image', source:{ type:'base64', media_type:mt, data:b64 } });
+    contentParts.push({ type:'text', text:'(Bild: "'+src.name+'")' });
+  }
+  for (const src of S.sources.filter(s=>s.type==='pdf')) {
+    contentParts.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:src.base64 } });
+    contentParts.push({ type:'text', text:'(PDF: "'+src.name+'")' });
+  }
+
+  const typeHints = [];
+  if (types.includes('mc')) typeHints.push(`"mc": options (3-5 Antworten), correctIndices (Array – 1 bis alle können richtig sein!), WICHTIG: falsche Antworten müssen realistisch und aus dem Themenkontext sein – nie offensichtlich falsch!`);
+  if (types.includes('tf')) typeHints.push(`"tf": correctAnswer (true/false)`);
+  if (types.includes('write')) typeHints.push(`"write": correctAnswer (Hauptantwort), acceptableAnswers (Array mit Varianten/Umschreibungen)`);
+
+  const prompt = `Erstelle ${extra} deutsche Quizfragen aus diesem Lernmaterial für einen Schüler.
+
+Fragetypen: ${typeHints.join(' | ')}
+
+REGELN Multiple Choice:
+- Falsche Antworten müssen zum Thema passen und plausibel klingen (nicht offensichtlich falsch)
+- Variiere die Anzahl richtiger Antworten: manchmal 1, manchmal 2, manchmal alle!
+- correctIndices: immer mindestens [0] (min. eine richtige Antwort)
+
+Antworte NUR mit JSON, kein Markdown:
+{"title":"Quiz-Titel","questions":[{"id":1,"type":"mc","question":"Frage?","options":["A","B","C","D"],"correctIndices":[0,2],"explanation":"Erklärung"},{"id":2,"type":"tf","question":"Aussage?","correctAnswer":true,"explanation":"Erklärung"},{"id":3,"type":"write","question":"Was ist...?","correctAnswer":"Antwort","acceptableAnswers":["Variante1","Variante2"],"explanation":"Erklärung"}]}`;
+
+  contentParts.push({ type:'text', text: prompt });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:4000, messages:[{ role:'user', content:contentParts }] })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(c=>c.text||'').join('') || '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    let quiz;
+    try { quiz = JSON.parse(clean); }
+    catch { const m = clean.match(/\{[\s\S]*\}/); quiz = JSON.parse(m[0]); }
+
+    quiz.id = Date.now();
+    quiz.created = new Date().toLocaleDateString('de-DE');
+    quiz.mode = S.mode;
+    quiz.types = [...S.types];
+    quiz.sourceCount = S.sources.length;
+
+    const saved = store.saved();
+    saved.unshift(quiz);
+    store.setSaved(saved);
+
+    unloading();
+    startQuiz(quiz);
+  } catch(e) {
+    unloading();
+    toast('❌ Fehler: ' + e.message, 4000);
+    console.error(e);
+  }
+}
+
+// ===== QUIZ =====
+function startQuiz(quiz, onlyWrong=false, wrongIds=null) {
+  let questions = [...quiz.questions];
+  if (onlyWrong && wrongIds) questions = questions.filter(q => wrongIds.includes(q.id));
+  const count = parseInt(document.getElementById('q-count')?.value || 10);
+  if (!onlyWrong && quiz.mode !== 'survival') questions = questions.slice(0, count);
+
+  S.quiz = quiz; S.questions = shuffle(questions); S.idx = 0;
+  S.score = 0; S.lives = 3; S.wrong = []; S.answered = false;
+  S.survival = quiz.mode === 'survival';
+  mcSelected = new Set();
+
+  const livesRow = document.getElementById('lives-row');
+  livesRow.style.display = S.survival ? 'flex' : 'none';
+
+  showQuizLayout();
+  renderQ();
+}
+
+function renderQ() {
+  const q = S.questions[S.idx];
+  const total = S.survival ? '∞' : S.questions.length;
+  const cur = S.idx + 1;
+
+  document.getElementById('qprogress-text').textContent = `Frage ${cur} / ${total}`;
+  const pct = S.survival ? 100 : (cur / S.questions.length * 100);
+  document.getElementById('pbar-fill').style.width = pct + '%';
+  document.getElementById('score-pill').textContent = S.score + ' Pkt.';
+  document.getElementById('next-btn').disabled = true;
+  S.answered = false;
+  mcSelected = new Set();
+  if (S.survival) renderLives();
+
+  let html = '';
+  if (q.type === 'mc') {
+    const letters = ['A','B','C','D','E'];
+    const opts = q.options.map((o,i) => `
+      <button class="option-btn" onclick="selectMC(this,${i})" data-idx="${i}">
+        <div class="opt-dot">${letters[i]}</div>
+        <span>${o}</span>
+      </button>`).join('');
+    html = `
+      <div class="q-meta"><span class="q-badge mc">☑️ Multiple Choice</span></div>
+      <div class="q-text">${q.question}</div>
+      <div class="q-hint">💡 Eine oder mehrere Antworten können richtig sein.</div>
+      <div class="options-list">${opts}</div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="submitMC()" id="mc-sub">Prüfen ✓</button>
+    `;
+  } else if (q.type === 'tf') {
+    html = `
+      <div class="q-meta"><span class="q-badge tf">✅ Richtig/Falsch</span></div>
+      <div class="q-text">${q.question}</div>
+      <div class="tf-row">
+        <button class="tf-btn" onclick="selectTF(this,true)" data-v="true">✅ Richtig</button>
+        <button class="tf-btn" onclick="selectTF(this,false)" data-v="false">❌ Falsch</button>
+      </div>
+    `;
+  } else {
+    html = `
+      <div class="q-meta"><span class="q-badge wr">✏️ Freitext</span></div>
+      <div class="q-text">${q.question}</div>
+      <textarea id="write-ta" placeholder="Deine Antwort..." rows="3" style="margin-bottom:10px"></textarea>
+      <button class="btn btn-primary btn-full" onclick="submitWrite()">Prüfen ✓</button>
+    `;
+  }
+
+  document.getElementById('question-container').innerHTML = `
+    <div class="question-card">
+      ${html}
+      <div class="feedback-box" id="fb"></div>
+    </div>
+  `;
+  document.getElementById('quiz-scroll').scrollTop = 0;
+}
+
+function selectMC(btn, idx) {
+  if (S.answered) return;
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    btn.querySelector('.opt-dot').textContent = ['A','B','C','D','E'][idx];
+    mcSelected.delete(idx);
+  } else {
+    btn.classList.add('selected');
+    btn.querySelector('.opt-dot').textContent = '✓';
+    mcSelected.add(idx);
+  }
+}
+
+function submitMC() {
+  if (S.answered) return;
+  if (!mcSelected.size) return toast('Wähle mindestens eine Antwort');
+  S.answered = true;
+  const q = S.questions[S.idx];
+  document.getElementById('mc-sub').style.display = 'none';
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+
+  const correct = new Set(q.correctIndices);
+  const isRight = [...correct].every(i => mcSelected.has(i)) && [...mcSelected].every(i => correct.has(i));
+
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    const i = parseInt(btn.dataset.idx);
+    if (correct.has(i)) btn.classList.add('correct');
+    if (mcSelected.has(i) && !correct.has(i)) btn.classList.add('wrong');
+  });
+
+  showFB(isRight, q, isRight ? null : `Richtig: ${q.correctIndices.map(i=>q.options[i]).join(', ')}`);
+  document.getElementById('next-btn').disabled = false;
+}
+
+function selectTF(btn, val) {
+  if (S.answered) return;
+  S.answered = true;
+  const q = S.questions[S.idx];
+  const isRight = val === q.correctAnswer;
+  document.querySelectorAll('.tf-btn').forEach(b => b.classList.add('disabled'));
+  btn.classList.add(isRight ? 'correct' : 'wrong');
+  if (!isRight) document.querySelectorAll('.tf-btn').forEach(b => { if((b.dataset.v==='true')===q.correctAnswer) b.classList.add('correct'); });
+  showFB(isRight, q);
+  document.getElementById('next-btn').disabled = false;
+}
+
+async function submitWrite() {
+  if (S.answered) return;
+  const input = document.getElementById('write-ta')?.value.trim();
+  if (!input) return toast('Bitte schreibe etwas');
+  S.answered = true;
+  document.getElementById('write-ta').disabled = true;
+
+  const q = S.questions[S.idx];
+  const norm = s => s.toLowerCase().replace(/[äöü]/g,c=>({ä:'ae',ö:'oe',ü:'ue'}[c]||c)).replace(/[^a-z0-9\s]/g,'').trim();
+  const ni = norm(input), nc = norm(q.correctAnswer);
+  const acc = (q.acceptableAnswers||[]).map(norm);
+  const quick = ni===nc || acc.some(a => ni.includes(a)||a.includes(ni));
+
+  if (quick) { showFB(true, q); document.getElementById('next-btn').disabled = false; return; }
+
+  loading('🤖 Antwort wird geprüft...');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:200,
+        messages:[{ role:'user', content:`Frage: "${q.question}"\nErwartet: "${q.correctAnswer}"\nVarianten: ${JSON.stringify(q.acceptableAnswers||[])}\nSchülerantwort: "${input}"\n\nIst die Antwort inhaltlich korrekt?\nNUR JSON: {"correct":true/false,"feedback":"1 Satz auf Deutsch"}` }]
+      })
+    });
+    const data = await res.json();
+    const txt = data.content?.map(c=>c.text||'').join('') || '';
+    const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    unloading();
+    showFB(parsed.correct, q, parsed.feedback);
+  } catch {
+    unloading();
+    const kw = q.correctAnswer.split(' ').filter(w=>w.length>3).map(w=>norm(w));
+    const hits = kw.filter(k=>ni.includes(k)).length;
+    showFB(hits >= Math.max(1, kw.length*.5), q, 'Ungefähr geprüft');
+  }
+  document.getElementById('next-btn').disabled = false;
+}
+
+function showFB(ok, q, extra=null) {
+  const fb = document.getElementById('fb');
+  if (ok) {
+    S.score += 10;
+    document.getElementById('score-pill').textContent = S.score + ' Pkt.';
+    fb.className = 'feedback-box show correct';
+    fb.innerHTML = `✅ <strong>Richtig!</strong>${q.explanation ? ' '+q.explanation : ''}${extra ? '<br>'+extra : ''}`;
+  } else {
+    if (S.survival) { S.lives--; renderLives(); flashRed(); }
+    fb.className = 'feedback-box show wrong';
+    fb.innerHTML = `❌ <strong>Falsch.</strong>${extra ? ' '+extra : ''}${q.explanation ? '<br>💡 '+q.explanation : ''}`;
+    S.wrong.push(q);
+  }
+  // Scroll to feedback
+  setTimeout(() => { document.getElementById('quiz-scroll').scrollTop = 9999; }, 100);
+}
+
+function renderLives() {
+  const el = document.getElementById('lives-row'); el.innerHTML = '';
+  for (let i=0;i<3;i++) { const s=document.createElement('span'); s.className='life'+(i>=S.lives?' lost':''); s.textContent='❤️'; el.appendChild(s); }
+}
+
+function flashRed() {
+  const el = document.getElementById('life-flash');
+  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 350);
+}
+
+async function nextQuestion() {
+  if (S.survival && S.lives <= 0) { showResults(); return; }
+  S.idx++;
+  if (S.survival && S.idx >= S.questions.length) {
+    await genMoreSurvival();
+    if (S.lives <= 0) { showResults(); return; }
+  } else if (!S.survival && S.idx >= S.questions.length) { showResults(); return; }
+  renderQ();
+}
+
+async function genMoreSurvival() {
+  loading('🤖 Neue Fragen...');
+  const txt = S.sources.filter(s=>s.type==='text').map(s=>s.text).join('\n\n').slice(0,3000);
+  const hints = [];
+  if (S.quiz.types?.includes('mc')) hints.push('"mc": options, correctIndices');
+  if (S.quiz.types?.includes('tf')) hints.push('"tf": correctAnswer bool');
+  if (S.quiz.types?.includes('write')) hints.push('"write": correctAnswer, acceptableAnswers');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000,
+        messages:[{ role:'user', content:`Material: ${txt}\n\nErstelle 5 neue deutsche Quizfragen. Typen: ${hints.join('; ')}\nNUR JSON: {"questions":[...]} mit id,type,question,typspezifischen Feldern,explanation` }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(c=>c.text||'').join('') || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim().match(/\{[\s\S]*\}/)[0]);
+    unloading();
+    S.questions.push(...parsed.questions.map((q,i) => ({...q, id:Date.now()+i})));
+  } catch {
+    unloading();
+    S.questions.push(...shuffle(S.quiz.questions).slice(0,5).map(q => ({...q, id:Date.now()+Math.random()})));
+  }
+}
+
+function confirmQuit() {
+  if (confirm('Quiz abbrechen?')) { showMainLayout(); switchTab('setup'); }
+}
+
+// ===== RESULTS =====
+function showResults() {
+  const done = S.idx;
+  const wrong = S.wrong.length;
+  const correct = done - wrong;
+  const pct = Math.round(correct / Math.max(1,done) * 100);
+
+  if (S.survival) {
+    const hs = store.hs();
+    hs.push({ score:S.score, questions:done, date:new Date().toLocaleDateString('de-DE'), quiz:S.quiz.title });
+    hs.sort((a,b)=>b.score-a.score);
+    store.setHs(hs.slice(0,20));
+  }
+
+  let emoji='🏆', title='Perfekt!', color='var(--accent3)';
+  if (pct<50){emoji='😔';title='Weiter üben!';color='var(--danger)';}
+  else if(pct<70){emoji='😊';title='Gut gemacht!';color='var(--gold)';}
+  else if(pct<90){emoji='🎉';title='Super!';color='var(--accent)';}
+
+  showMainLayout();
+
+  document.getElementById('results-hero-el').innerHTML = `
+    <div class="results-hero">
+      <div class="res-emoji">${emoji}</div>
+      <div class="res-title">${title}</div>
+      <div class="res-pct" style="color:${color}">${pct}%</div>
+      <div class="res-sub">${S.quiz.title}</div>
+      ${S.survival?`<div style="margin-top:10px;font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--gold)">🏆 ${S.score} Punkte · ${done} Fragen</div>`:''}
+    </div>`;
+
+  document.getElementById('results-stats-el').innerHTML = `
+    <div class="stat-card g"><div class="sv">${correct}</div><div class="sl">Richtig</div></div>
+    <div class="stat-card r"><div class="sv">${wrong}</div><div class="sl">Falsch</div></div>
+    <div class="stat-card b"><div class="sv">${S.score}</div><div class="sl">Punkte</div></div>`;
+
+  if (S.wrong.length > 0) {
+    document.getElementById('results-wrong-el').innerHTML = `
+      <div class="wrong-section">
+        <h3>❌ Falsche Antworten</h3>
+        ${S.wrong.map(q=>`
+          <div class="wrong-item">
+            <div class="wq">❓ ${q.question}</div>
+            <div class="wa">✅ Richtig: <strong>${q.type==='mc'?q.correctIndices.map(i=>q.options[i]).join(', '):q.correctAnswer}</strong></div>
+            ${q.explanation?`<div class="we">💡 ${q.explanation}</div>`:''}
+          </div>`).join('')}
+      </div>`;
+  } else { document.getElementById('results-wrong-el').innerHTML = ''; }
+
+  const wrongIds = JSON.stringify(S.wrong.map(q=>q.id));
+  document.getElementById('results-actions-el').innerHTML = `
+    <button class="btn btn-primary btn-full" onclick="startQuiz(S.quiz)">🔁 Nochmal</button>
+    ${S.wrong.length?`<button class="btn btn-danger btn-full" onclick="startQuiz(S.quiz,true,${wrongIds})">❌ Nur Falsche üben (${S.wrong.length})</button>`:''}
+    ${S.survival?`<button class="btn btn-outline btn-full" onclick="switchTab('highscore')">🏆 Highscore ansehen</button>`:''}
+    <button class="btn btn-outline btn-full" onclick="switchTab('saved')">💾 Alle Quizze</button>`;
+
+  switchTab('results');
+}
+
+// ===== SAVED =====
+function renderSaved() {
+  const saved = store.saved();
+  const el = document.getElementById('saved-list');
+  if (!saved.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">💾</div><h3>Keine gespeicherten Quizze</h3><p>Erstelle zuerst ein Quiz</p></div>';
+    return;
+  }
+  const micons = {normal:'📝',practice:'🔁',survival:'💀'};
+  el.innerHTML = saved.map((q,i) => `
+    <div class="quiz-list-item">
+      <div class="qli-top">
+        <div>
+          <div class="qli-title">${micons[q.mode]||'📝'} ${q.title}</div>
+          <div class="qli-meta">${q.questions.length} Fragen · ${q.created}</div>
+        </div>
+        <button class="btn btn-outline" style="padding:6px 10px;font-size:.8rem" onclick="deleteSaved(${i})">🗑️</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="loadSaved(${i})">▶ Starten</button>
+    </div>`).join('');
+}
+
+function loadSaved(i) {
+  const q = store.saved()[i]; if(!q) return;
+  S.types = q.types || ['mc','tf','write'];
+  S.mode = q.mode || 'normal';
+  startQuiz(q);
+}
+
+function deleteSaved(i) {
+  if (!confirm('Quiz löschen?')) return;
+  const saved = store.saved(); saved.splice(i,1); store.setSaved(saved); renderSaved(); toast('Gelöscht');
+}
+
+// ===== HIGHSCORE =====
+function renderHS() {
+  const hs = store.hs();
+  const el = document.getElementById('hs-content');
+  if (!hs.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">🏆</div><h3>Noch kein Score</h3><p>Spiele den Survival-Modus!</p></div>';
+    return;
+  }
+  const rc = ['g','s','b'];
+  const rs = ['🥇','🥈','🥉'];
+  el.innerHTML = `<div class="hs-table">
+    <div class="hs-row hdr"><div class="hs-rank">#</div><div class="hs-name">Quiz</div><div class="hs-score">Punkte</div><div class="hs-date">Datum</div></div>
+    ${hs.map((h,i)=>`
+    <div class="hs-row">
+      <div class="hs-rank ${rc[i]||''}">${i<3?rs[i]:i+1}</div>
+      <div class="hs-name">${h.quiz||'Quiz'}<div class="hs-sub">${h.questions} Fragen</div></div>
+      <div class="hs-score">${h.score}</div>
+      <div class="hs-date">${h.date}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+renderSources();
+</script>
+</body>
+</html>
