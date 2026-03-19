@@ -687,27 +687,51 @@ function selectMode(card) {
   S.mode = card.dataset.mode;
 }
 
-// ===== GEMINI API =====
-const GEMINI_KEY = 'AIzaSyAeZuUlRg0kEcxo0XBlg5tt0CnrnENFLmQ';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`;
+// ===== OPENROUTER API =====
+const OR_KEY = 'DEIN_OPENROUTER_KEY_HIER';
+const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OR_MODEL = 'meta-llama/llama-3.3-8b-instruct:free';
 
 async function gemini(parts) {
-  const res = await fetch(GEMINI_URL, {
+  // Convert Gemini-style parts to OpenRouter messages
+  let content = [];
+  for (const p of parts) {
+    if (p.text) {
+      content.push({ type: 'text', text: p.text });
+    } else if (p.inlineData) {
+      // Images as base64
+      content.push({ type: 'image_url', image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` } });
+    }
+  }
+  // If only text parts, send as simple string
+  const allText = parts.filter(p=>p.text).map(p=>p.text).join('\n\n');
+  const hasMedia = parts.some(p=>p.inlineData);
+
+  const res = await fetch(OR_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts }] })
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OR_KEY}`,
+      'HTTP-Referer': window.location.href,
+      'X-Title': 'QuizGenius'
+    },
+    body: JSON.stringify({
+      model: OR_MODEL,
+      messages: [{ role: 'user', content: hasMedia ? content : allText }]
+    })
   });
   if (!res.ok) {
     const err = await res.json().catch(()=>({}));
     throw new Error(err?.error?.message || `HTTP ${res.status}`);
   }
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+  return data.choices?.[0]?.message?.content || '';
 }
 
 // ===== GENERATE =====
 async function generateQuiz() {
   if (!S.sources.length) return toast('⚠️ Füge zuerst Quellen hinzu');
+  if (OR_KEY === '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') return toast('⚠️ Bitte zuerst deinen OpenRouter Key in der Datei eintragen!', 4000);
   loading('🤖 KI analysiert deine Quellen...');
 
   const count = parseInt(document.getElementById('q-count').value);
