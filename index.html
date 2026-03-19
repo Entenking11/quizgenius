@@ -687,6 +687,24 @@ function selectMode(card) {
   S.mode = card.dataset.mode;
 }
 
+// ===== GEMINI API =====
+const GEMINI_KEY = 'AIzaSyCSDDYwtJQCEQMgOGNmXvf3xcYUxbax5ro';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+async function gemini(parts) {
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts }] })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+}
+
 // ===== GENERATE =====
 async function generateQuiz() {
   if (!S.sources.length) return toast('⚠️ Füge zuerst Quellen hinzu');
@@ -696,25 +714,26 @@ async function generateQuiz() {
   const extra = S.mode === 'survival' ? count + 10 : count;
   const types = S.types;
 
-  const contentParts = [];
+  // Build Gemini parts (text + inline images/pdfs)
+  const parts = [];
   const textContent = S.sources.filter(s=>s.type==='text').map(s=>s.text).join('\n\n---\n\n');
-  if (textContent) contentParts.push({ type:'text', text:'Lernmaterial:\n'+textContent });
+  if (textContent) parts.push({ text: 'Lernmaterial:\n' + textContent });
 
   for (const src of S.sources.filter(s=>s.type==='image')) {
     const b64 = src.rawContent.split(',')[1];
-    const mt = src.rawContent.match(/data:(image\/\w+)/)?.[1] || 'image/jpeg';
-    contentParts.push({ type:'image', source:{ type:'base64', media_type:mt, data:b64 } });
-    contentParts.push({ type:'text', text:'(Bild: "'+src.name+'")' });
+    const mt = src.rawContent.match(/data:(image\/[\w+]+)/)?.[1] || 'image/jpeg';
+    parts.push({ inlineData: { mimeType: mt, data: b64 } });
+    parts.push({ text: `(Bild: "${src.name}")` });
   }
   for (const src of S.sources.filter(s=>s.type==='pdf')) {
-    contentParts.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:src.base64 } });
-    contentParts.push({ type:'text', text:'(PDF: "'+src.name+'")' });
+    parts.push({ inlineData: { mimeType: 'application/pdf', data: src.base64 } });
+    parts.push({ text: `(PDF: "${src.name}")` });
   }
 
   const typeHints = [];
-  if (types.includes('mc')) typeHints.push(`"mc": options (3-5 Antworten), correctIndices (Array – 1 bis alle können richtig sein!), WICHTIG: falsche Antworten müssen realistisch und aus dem Themenkontext sein – nie offensichtlich falsch!`);
-  if (types.includes('tf')) typeHints.push(`"tf": correctAnswer (true/false)`);
-  if (types.includes('write')) typeHints.push(`"write": correctAnswer (Hauptantwort), acceptableAnswers (Array mit Varianten/Umschreibungen)`);
+  if (types.includes('mc')) typeHints.push('"mc": options (3-5 Antworten), correctIndices (Array – 1 bis alle können richtig sein!), falsche Antworten realistisch und kontextuell plausibel');
+  if (types.includes('tf')) typeHints.push('"tf": correctAnswer (true/false)');
+  if (types.includes('write')) typeHints.push('"write": correctAnswer (Hauptantwort), acceptableAnswers (Array mit Varianten)');
 
   const prompt = `Erstelle ${extra} deutsche Quizfragen aus diesem Lernmaterial für einen Schüler.
 
@@ -723,21 +742,15 @@ Fragetypen: ${typeHints.join(' | ')}
 REGELN Multiple Choice:
 - Falsche Antworten müssen zum Thema passen und plausibel klingen (nicht offensichtlich falsch)
 - Variiere die Anzahl richtiger Antworten: manchmal 1, manchmal 2, manchmal alle!
-- correctIndices: immer mindestens [0] (min. eine richtige Antwort)
+- correctIndices: immer mindestens ein Index vorhanden
 
-Antworte NUR mit JSON, kein Markdown:
+Antworte NUR mit reinem JSON, absolut kein Markdown, keine Backticks:
 {"title":"Quiz-Titel","questions":[{"id":1,"type":"mc","question":"Frage?","options":["A","B","C","D"],"correctIndices":[0,2],"explanation":"Erklärung"},{"id":2,"type":"tf","question":"Aussage?","correctAnswer":true,"explanation":"Erklärung"},{"id":3,"type":"write","question":"Was ist...?","correctAnswer":"Antwort","acceptableAnswers":["Variante1","Variante2"],"explanation":"Erklärung"}]}`;
 
-  contentParts.push({ type:'text', text: prompt });
+  parts.push({ text: prompt });
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:4000, messages:[{ role:'user', content:contentParts }] })
-    });
-    const data = await res.json();
-    const raw = data.content?.map(c=>c.text||'').join('') || '';
+    const raw = await gemini(parts);
     const clean = raw.replace(/```json|```/g,'').trim();
     let quiz;
     try { quiz = JSON.parse(clean); }
@@ -900,14 +913,7 @@ async function submitWrite() {
 
   loading('🤖 Antwort wird geprüft...');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:200,
-        messages:[{ role:'user', content:`Frage: "${q.question}"\nErwartet: "${q.correctAnswer}"\nVarianten: ${JSON.stringify(q.acceptableAnswers||[])}\nSchülerantwort: "${input}"\n\nIst die Antwort inhaltlich korrekt?\nNUR JSON: {"correct":true/false,"feedback":"1 Satz auf Deutsch"}` }]
-      })
-    });
-    const data = await res.json();
-    const txt = data.content?.map(c=>c.text||'').join('') || '';
+    const txt = await gemini([{ text: `Frage: "${q.question}"\nErwartet: "${q.correctAnswer}"\nVarianten: ${JSON.stringify(q.acceptableAnswers||[])}\nSchülerantwort: "${input}"\n\nIst die Antwort inhaltlich korrekt?\nNUR reines JSON ohne Markdown: {"correct":true,"feedback":"1 Satz auf Deutsch"}` }]);
     const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
     unloading();
     showFB(parsed.correct, q, parsed.feedback);
@@ -965,14 +971,7 @@ async function genMoreSurvival() {
   if (S.quiz.types?.includes('tf')) hints.push('"tf": correctAnswer bool');
   if (S.quiz.types?.includes('write')) hints.push('"write": correctAnswer, acceptableAnswers');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000,
-        messages:[{ role:'user', content:`Material: ${txt}\n\nErstelle 5 neue deutsche Quizfragen. Typen: ${hints.join('; ')}\nNUR JSON: {"questions":[...]} mit id,type,question,typspezifischen Feldern,explanation` }]
-      })
-    });
-    const data = await res.json();
-    const raw = data.content?.map(c=>c.text||'').join('') || '';
+    const raw = await gemini([{ text: `Material: ${txt}\n\nErstelle 5 neue deutsche Quizfragen. Typen: ${hints.join('; ')}\nNUR reines JSON ohne Markdown: {"questions":[...]} mit id,type,question,typspezifischen Feldern,explanation` }]);
     const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim().match(/\{[\s\S]*\}/)[0]);
     unloading();
     S.questions.push(...parsed.questions.map((q,i) => ({...q, id:Date.now()+i})));
